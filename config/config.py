@@ -38,6 +38,7 @@ S3_CONFIG = {
     "endpoint_url": os.getenv("S3_ENDPOINT_URL", ""),
     "bucket_name": os.getenv("S3_BUCKET_NAME", ""),
     "region": os.getenv("S3_REGION", ""),
+    "prefix": os.getenv("S3_PREFIX", ""),
     "connect_timeout": int(os.getenv("S3_CONNECT_TIMEOUT", "60")),
     "connect_attempts": int(os.getenv("S3_CONNECT_ATTEMPTS", "3"))
 }

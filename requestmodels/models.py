@@ -22,6 +22,7 @@ class S3Config(BaseModel):
             "endpoint_url": "",
             "bucket_name": "",
             "region": "",
+            "prefix": "",
             "connect_timeout": 60,
             "connect_attempts": 3
         }
@@ -34,6 +35,7 @@ class S3Config(BaseModel):
             "endpoint_url": self.endpoint_url or os.environ.get("S3_ENDPOINT_URL", ""),
             "bucket_name": self.bucket_name or os.environ.get("S3_BUCKET_NAME", ""),
             "region": self.region or os.environ.get("S3_REGION", ""),
+            "prefix": self.prefix or os.environ.get("S3_PREFIX", ""),
             "connect_timeout": self.connect_timeout,
             "connect_attempts": self.connect_attempts
         }
@@ -150,7 +152,8 @@ class Payload(BaseModel):
                         "secret_access_key": "your-s3-secret-access-key",
                         "endpoint_url": "https://my-endpoint.backblaze.com",
                         "bucket_name": "your-bucket",
-                        "region": "us-east-1"
+                        "region": "us-east-1",
+                        "prefix": "comfyui"
                     },
                     "webhook": {
                         "url": "your-webhook-url",           # Changed from "webhook_url"
