@@ -11,6 +11,7 @@ class S3Config(BaseModel):
     endpoint_url: str = Field(default="")
     bucket_name: str = Field(default="")
     region: str = Field(default="")
+    prefix: str = Field(default="")
     connect_timeout: int = Field(default=60)
     connect_attempts: int = Field(default=3)
     
