@@ -317,7 +317,7 @@ class PostprocessWorker:
             # Configure timeouts and retries
             aio_config = aiobotocore.config.AioConfig(
                 connect_timeout=int(s3_config.get("connect_timeout", 60)),
-                retries={"max_attempts": int(s3_config.get("connect_attempts", 3))}
+                retries={"max_attempts": int(s3_config.get("connect_attempts", 3))},
             )
             client_config['config'] = aio_config
             
@@ -325,6 +325,9 @@ class PostprocessWorker:
                 bucket_name = s3_config.get("bucket_name")
                 if not bucket_name:
                     raise ValueError("S3 bucket_name is required")
+                prefix = s3_config.get("prefix")
+                if not prefix:
+                    prefix = "images"
                 
                 # Upload all files concurrently
                 tasks = []
@@ -333,7 +336,7 @@ class PostprocessWorker:
                     if local_path and Path(local_path).exists():
                         task = asyncio.create_task(
                             self.upload_file_and_get_url(
-                                prefix=obj.get("prefix"),
+                                prefix=prefix,
                                 s3_client=s3_client, 
                                 bucket_name=bucket_name, 
                                 local_path=local_path
