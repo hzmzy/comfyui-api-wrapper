@@ -6,7 +6,6 @@ import shutil
 from pathlib import Path
 from typing import Dict, List, Optional
 import json
-import uuid
 
 import aiobotocore.session
 import aiofiles
@@ -317,7 +316,7 @@ class PostprocessWorker:
             # Configure timeouts and retries
             aio_config = aiobotocore.config.AioConfig(
                 connect_timeout=int(s3_config.get("connect_timeout", 60)),
-                retries={"max_attempts": int(s3_config.get("connect_attempts", 3))},
+                retries={"max_attempts": int(s3_config.get("connect_attempts", 3))}
             )
             client_config['config'] = aio_config
             
@@ -325,9 +324,6 @@ class PostprocessWorker:
                 bucket_name = s3_config.get("bucket_name")
                 if not bucket_name:
                     raise ValueError("S3 bucket_name is required")
-                prefix = s3_config.get("prefix")
-                if not prefix:
-                    prefix = "images"
                 
                 # Upload all files concurrently
                 tasks = []
@@ -336,10 +332,7 @@ class PostprocessWorker:
                     if local_path and Path(local_path).exists():
                         task = asyncio.create_task(
                             self.upload_file_and_get_url(
-                                prefix=prefix,
-                                s3_client=s3_client, 
-                                bucket_name=bucket_name, 
-                                local_path=local_path
+                                request_id, s3_client, bucket_name, local_path
                             )
                         )
                         tasks.append(task)
@@ -369,23 +362,16 @@ class PostprocessWorker:
         """Helper for asyncio.gather with missing files"""
         return None
 
-
-    async def upload_file_and_get_url(self, prefix: str, s3_client, bucket_name: str, local_path: str) -> Optional[str]:
+    async def upload_file_and_get_url(self, request_id: str, s3_client, bucket_name: str, local_path: str) -> Optional[str]:
         """Upload single file and return presigned URL"""
-        upload_path = local_path
-        watermarked_path = None
-        
         try:
-
-            file_path = Path(upload_path)
-            # file name use uuid.
-            file_name = f"{uuid.uuid4()}{file_path.suffix}"
-            s3_key = f"{prefix}/{file_name}"
+            file_path = Path(local_path)
+            s3_key = f"{request_id}/{file_path.name}"
             
             logger.debug(f"Uploading {s3_key} to bucket {bucket_name}")
 
             # Upload file
-            async with aiofiles.open(upload_path, 'rb') as file:
+            async with aiofiles.open(local_path, 'rb') as file:
                 file_content = await file.read()
                 await s3_client.put_object(
                     Bucket=bucket_name, 
@@ -406,14 +392,6 @@ class PostprocessWorker:
         except Exception as e:
             logger.error(f"Error uploading {local_path}: {e}")
             raise
-        finally:
-            # Clean up temporary watermarked file if it was created
-            if watermarked_path and watermarked_path != local_path:
-                try:
-                    await aiofiles.os.remove(watermarked_path)
-                    logger.debug(f"Cleaned up temporary watermarked file: {watermarked_path}")
-                except Exception as cleanup_error:
-                    logger.warning(f"Failed to clean up watermarked file {watermarked_path}: {cleanup_error}")
 
     async def send_webhook(self, webhook_url: str, result, extra_params: Dict = None) -> None:
         """Send webhook notification with result"""
